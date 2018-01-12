@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">LoverRemote</string>
+    <string name="bluetooth">Bluetooth</string>
+    <string name="Phone">OtherPhone</string>
+</resources>
