@@ -9,7 +9,6 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -17,32 +16,36 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.Handler;
-import android.os.Message;
+
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Set;
 import java.util.UUID;
 
-import static android.bluetooth.BluetoothAdapter.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+import static io.badetitou.loverremote.BluetoothHelper.sixteenBitUuid;
 
 public class MainActivity extends AppCompatActivity {
 
+    BluetoothGattCharacteristic receiveCharacteristic;
+
     BluetoothAdapter mBluetoothAdapter;
     BluetoothDevice mDevice;
+    BluetoothGatt mBluetoothGatt;
+    BluetoothGattService mBluetoothGattService;
+
+    private String TAG = "BLUE";
 
     TextView temperature;
     TextView hydrometry;
     TextView pressure;
     TextView bluetooth;
+
 
     private Metrics currentMetrics = Metrics.Hydro;
 
@@ -60,6 +63,8 @@ public class MainActivity extends AppCompatActivity {
 
         TextView t = findViewById(R.id.connected);
         temperature = findViewById(R.id.temperature);
+        hydrometry = findViewById(R.id.hydro);
+        pressure = findViewById(R.id.pressure);
 
         bluetooth = findViewById(R.id.bluetooth);
         ConnectivityManager connManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -97,15 +102,6 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-
-
-    private String TAG = "BLUE";
-
-    BluetoothGatt mBluetoothGatt;
-    BluetoothGattService mBluetoothGattService;
-
-
-
     private final BluetoothGattCallback mGattCallback =
             new BluetoothGattCallback() {
                 @Override
@@ -125,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
                     if (status == BluetoothGatt.GATT_SUCCESS) {
                         Log.i(TAG,"Service discovered : " + gatt.getServices());
                         mBluetoothGattService = gatt.getService(UUID_SERVICE);
-                        BluetoothGattCharacteristic receiveCharacteristic = mBluetoothGattService.getCharacteristic(UUID_RECEIVE);
+                        receiveCharacteristic = mBluetoothGattService.getCharacteristic(UUID_RECEIVE);
                         Log.i(TAG, "UUID " + receiveCharacteristic.getUuid().toString());
 
                         mBluetoothGatt.setCharacteristicNotification(receiveCharacteristic, true);
@@ -170,10 +166,14 @@ public class MainActivity extends AppCompatActivity {
             // For all other profiles, writes the data formatted in HEX.
             final byte[] data = characteristic.getValue();
             if (data != null && data.length > 0) {
-                final StringBuilder stringBuilder = new StringBuilder(data.length);
+                StringBuilder stringBuilder = new StringBuilder(data.length);
+                if (analyseData(data, stringBuilder)) {
+                    return;
+                }
+                stringBuilder = new StringBuilder(data.length);
                 for(byte byteChar : data)
                     //stringBuilder.append(String.format("%02X ", byteChar));
-                    stringBuilder.append(String.format("%c ", byteChar));
+                    stringBuilder.append(String.format("%s ", byteChar));
                 intent.putExtra(EXTRA_DATA, stringBuilder.toString());
                 Log.i(TAG, "SEND DATA : " + data);
             }
@@ -181,8 +181,29 @@ public class MainActivity extends AppCompatActivity {
         sendBroadcast(intent);
     }
 
+    private boolean analyseData(byte[] bytes, StringBuilder stringBuilder) {
+        try {
+            for (byte byteChar : bytes)
+                stringBuilder.append(String.format("%c ", byteChar));
+            switch (stringBuilder.toString()) {
+                case "t ":
+                    currentMetrics = Metrics.Temperature;
+                    return true;
+                case "h ":
+                    currentMetrics = Metrics.Hydro;
+                    return true;
+                case "p ":
+                    currentMetrics = Metrics.Pressure;
+                    return true;
+            }
+            return false;
+        } catch (Exception e){
+            return false;
+        }
+    }
 
-    public static String shortUuidFormat = "0000%04X-0000-1000-8000-00805F9B34FB";
+
+    public final static UUID UUID_SEND = sixteenBitUuid(0x2222);
     public final static UUID UUID_RECEIVE = sixteenBitUuid(0x2221);
     public final static UUID UUID_SERVICE = sixteenBitUuid(0x2220);
     public final static String ACTION_GATT_CONNECTED =
@@ -210,16 +231,20 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void updateDisplay(String s){
-
-        temperature.setText(s);
+        switch (currentMetrics){
+            case Hydro:
+                hydrometry.setText(s);
+                break;
+            case Pressure:
+                pressure.setText(s);
+                break;
+            case Temperature:
+                temperature.setText(s);
+                break;
+            default:
+                bluetooth.setText("error ? ");
+        }
     }
-
-
-    public static UUID sixteenBitUuid(long shortUuid) {
-        assert shortUuid >= 0 && shortUuid <= 0xFFFF;
-        return UUID.fromString(String.format(shortUuidFormat, shortUuid & 0xFFFF));
-    }
-
 
     @Override
     public void onStop(){
@@ -249,4 +274,21 @@ public class MainActivity extends AppCompatActivity {
         return intentFilter;
     }
 
+    private final String TAG_BUZZ = "BUZZ";
+
+    public void buzz(View view) {
+        BluetoothGattCharacteristic characteristic = mBluetoothGattService.getCharacteristic(UUID_SEND);
+
+        if (characteristic == null) {
+            Log.w(TAG_BUZZ, "Send characteristic not found");
+        } else {
+
+            characteristic.setValue("He");
+            characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+            if (!mBluetoothGatt.writeCharacteristic(characteristic))
+                Log.w(TAG_BUZZ, "Send don't work");
+            Log.i(TAG_BUZZ, "Message send");
+        }
+    }
 }
+

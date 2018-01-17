@@ -115,7 +115,8 @@
         app:layout_constraintBottom_toBottomOf="@+id/tableLayout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:srcCompat="@mipmap/duck" />
+        app:srcCompat="@mipmap/duck"
+        android:onClick="buzz"/>
 
 
 </android.support.constraint.ConstraintLayout>
