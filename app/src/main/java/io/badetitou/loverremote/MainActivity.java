@@ -40,7 +40,12 @@ public class MainActivity extends AppCompatActivity {
     BluetoothDevice mDevice;
 
     TextView temperature;
+    TextView hydrometry;
+    TextView pressure;
     TextView bluetooth;
+
+    private Metrics currentMetrics = Metrics.Hydro;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,7 +60,6 @@ public class MainActivity extends AppCompatActivity {
 
         TextView t = findViewById(R.id.connected);
         temperature = findViewById(R.id.temperature);
-        temperature.setText("");
 
         bluetooth = findViewById(R.id.bluetooth);
         ConnectivityManager connManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -168,7 +172,8 @@ public class MainActivity extends AppCompatActivity {
             if (data != null && data.length > 0) {
                 final StringBuilder stringBuilder = new StringBuilder(data.length);
                 for(byte byteChar : data)
-                    stringBuilder.append(String.format("%02X ", byteChar));
+                    //stringBuilder.append(String.format("%02X ", byteChar));
+                    stringBuilder.append(String.format("%c ", byteChar));
                 intent.putExtra(EXTRA_DATA, stringBuilder.toString());
                 Log.i(TAG, "SEND DATA : " + data);
             }
@@ -205,6 +210,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void updateDisplay(String s){
+
         temperature.setText(s);
     }
 
