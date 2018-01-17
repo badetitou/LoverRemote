@@ -2,4 +2,7 @@
     <string name="app_name">LoverRemote</string>
     <string name="bluetooth">Bluetooth</string>
     <string name="Phone">OtherPhone</string>
+    <string name="metricTemp">°C</string>
+    <string name="metricHydro">%</string>
+    <string name="metricPressure">B</string>
 </resources>

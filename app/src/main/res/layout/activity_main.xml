@@ -60,6 +60,12 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
 
+                <TextView
+                    android:id="@+id/temperatureMetrics"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/metricTemp" />
+
             </TableRow>
 
             <TableRow
@@ -82,6 +88,12 @@
                     android:id="@+id/hydro"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
+
+                <TextView
+                    android:id="@+id/HydroMetrics"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/metricHydro" />
 
             </TableRow>
 
@@ -106,6 +118,12 @@
                     android:id="@+id/pressure"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
+
+                <TextView
+                    android:id="@+id/PressureMetrics"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/metricPressure"/>
 
             </TableRow>
 
